@@ -1,0 +1,62 @@
+{
+    "name": "atomcoder/laravel-toasty",
+    "version": "0.1.0",
+    "description": "Pines-inspired toast notifications for Laravel Blade and Livewire.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "toast",
+        "notifications",
+        "blade",
+        "livewire",
+        "pines"
+    ],
+    "authors": [
+        {
+            "name": "Atomcoder"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/session": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/view": "^10.0|^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.22|^9.0|^10.0",
+        "phpunit/phpunit": "^10.5|^11.0"
+    },
+    "suggest": {
+        "livewire/livewire": "Required if you want to dispatch toasts directly from Livewire 3 or 4 components."
+    },
+    "autoload": {
+        "psr-4": {
+            "Atomcoder\\Toasty\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Atomcoder\\Toasty\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Atomcoder\\Toasty\\ToastyServiceProvider"
+            ],
+            "aliases": {
+                "Toasty": "Atomcoder\\Toasty\\Facades\\Toasty"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
