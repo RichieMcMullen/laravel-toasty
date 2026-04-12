@@ -68,7 +68,10 @@
 
                         <template x-if="!toast.html">
                             <div class="relative w-full">
-                                <div class="flex items-start gap-3 pr-9">
+                                <div
+                                    class="flex gap-3 pr-9"
+                                    :class="toast.description ? 'items-start' : 'items-center'"
+                                >
                                     <span
                                         class="flex items-center justify-center w-11 h-11 shrink-0 rounded-full"
                                         :style="iconBadgeStyle(toast)"
@@ -77,24 +80,26 @@
                                         <svg x-show="toast.type === 'info'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 9C12.5523 9 13 8.55228 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55228 11.4477 9 12 9ZM13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12V16C11 16.5523 11.4477 17 12 17C12.5523 17 13 16.5523 13 16V12Z" fill="currentColor"></path></svg>
                                         <svg x-show="toast.type === 'warning'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.44829 4.46472C10.5836 2.51208 13.4105 2.51168 14.5464 4.46401L21.5988 16.5855C22.7423 18.5509 21.3145 21 19.05 21L4.94967 21C2.68547 21 1.25762 18.5516 2.4004 16.5862L9.44829 4.46472ZM11.9995 8C12.5518 8 12.9995 8.44772 12.9995 9V13C12.9995 13.5523 12.5518 14 11.9995 14C11.4473 14 10.9995 13.5523 10.9995 13V9C10.9995 8.44772 11.4473 8 11.9995 8ZM12.0009 15.99C11.4486 15.9892 11.0003 16.4363 10.9995 16.9886L10.9995 16.9986C10.9987 17.5509 11.4458 17.9992 11.9981 18C12.5504 18.0008 12.9987 17.5537 12.9995 17.0014L12.9995 16.9914C13.0003 16.4391 12.5532 15.9908 12.0009 15.99Z" fill="currentColor"></path></svg>
                                         <svg x-show="toast.type === 'danger'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM11.9996 7C12.5519 7 12.9996 7.44772 12.9996 8V12C12.9996 12.5523 12.5519 13 11.9996 13C11.4474 13 10.9996 12.5523 10.9996 12V8C10.9996 7.44772 11.4474 7 11.9996 7ZM12.001 14.99C11.4488 14.9892 11.0004 15.4363 10.9997 15.9886L10.9996 15.9986C10.9989 16.5509 11.446 16.9992 11.9982 17C12.5505 17.0008 12.9989 16.5537 12.9996 16.0014L12.9996 15.9914C13.0004 15.4391 12.5533 14.9908 12.001 14.99Z" fill="currentColor"></path></svg>
-                                        <svg x-show="toast.type === 'like'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.001 20.7279L10.5708 19.4255C5.49046 14.8076 2.13086 11.754 2.13086 8.00439C2.13086 4.95082 4.52643 2.55469 7.58056 2.55469C9.30616 2.55469 10.9622 3.35655 12.001 4.62474C13.0397 3.35655 14.6958 2.55469 16.4214 2.55469C19.4755 2.55469 21.8711 4.95082 21.8711 8.00439C21.8711 11.754 18.5115 14.8076 13.4311 19.4255L12.001 20.7279Z" fill="currentColor"/></svg>
-                                        <svg x-show="toast.type === 'bell'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.75C9.51472 3.75 7.5 5.76472 7.5 8.25V10.418C7.5 11.5652 7.10586 12.6776 6.38305 13.5683L5.10273 15.1457C4.69388 15.6495 5.05232 16.4062 5.70098 16.4062H18.299C18.9477 16.4062 19.3061 15.6495 18.8973 15.1457L17.6169 13.5683C16.8941 12.6776 16.5 11.5652 16.5 10.418V8.25C16.5 5.76472 14.4853 3.75 12 3.75Z" fill="currentColor"/><path d="M9.75 18.1875C9.75 19.4301 10.7574 20.4375 12 20.4375C13.2426 20.4375 14.25 19.4301 14.25 18.1875" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        <svg x-show="toast.type === 'like'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.8634 3.75C10.3246 3.75 9.8711 4.15072 9.80494 4.6855L9.40772 7.89633C9.30682 8.71201 9.02084 9.49391 8.57318 10.1827L7.5514 11.7547C7.25084 12.2172 7.08997 12.7563 7.08997 13.3079V18.2471C7.08997 19.1455 7.81836 19.8739 8.71677 19.8739H15.5407C16.9199 19.8739 18.1045 18.8962 18.3656 17.542L19.2012 13.2104C19.5064 11.6285 18.2937 10.1544 16.6827 10.1544H13.8731L14.3273 6.31154C14.4869 4.96063 13.4314 3.75 12.0711 3.75H10.8634ZM4.81567 11.8723C3.81387 11.8723 3.00183 12.6844 3.00183 13.6862V18.0601C3.00183 19.0619 3.81387 19.8739 4.81567 19.8739H5.96298V11.8723H4.81567Z" fill="currentColor"/></svg>
+                                        <svg x-show="toast.type === 'bell'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.75C9.44568 2.75 7.375 4.82068 7.375 7.375V9.34543C7.375 10.3892 7.01671 11.4013 6.36046 12.2128L4.93014 13.9814C4.36916 14.6751 4.86284 15.7188 5.75501 15.7188H18.245C19.1372 15.7188 19.6308 14.6751 19.0699 13.9814L17.6395 12.2128C16.9833 11.4013 16.625 10.3892 16.625 9.34543V7.375C16.625 4.82068 14.5543 2.75 12 2.75Z" fill="currentColor"/><path d="M9.25 17.1562C9.25 18.675 10.4812 19.9062 12 19.9062C13.5188 19.9062 14.75 18.675 14.75 17.1562H9.25Z" fill="currentColor"/></svg>
                                         <svg x-show="toast.type === 'default'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     </span>
 
                                     <div class="min-w-0 flex-1">
                                         <p
-                                            class="text-[13px] font-semibold leading-none tracking-[-0.01em]"
+                                            class="text-[13px] tracking-[-0.01em]"
+                                            :class="toast.description ? 'font-semibold leading-none' : 'font-semibold leading-none'"
                                             :style="titleStyle(toast)"
                                             x-text="toast.message"
                                         ></p>
 
-                                        <p
-                                            x-show="toast.description"
-                                            class="mt-2 text-sm leading-tight"
-                                            :style="descriptionStyle(toast)"
-                                            x-text="toast.description"
-                                        ></p>
+                                        <template x-if="toast.description">
+                                            <p
+                                                class="mt-2 text-sm leading-tight"
+                                                :style="descriptionStyle(toast)"
+                                                x-text="toast.description"
+                                            ></p>
+                                        </template>
                                     </div>
                                 </div>
                             </div>

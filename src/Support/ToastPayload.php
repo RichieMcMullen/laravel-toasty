@@ -109,6 +109,8 @@ class ToastPayload
             return null;
         }
 
-        return (string) $value;
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 }

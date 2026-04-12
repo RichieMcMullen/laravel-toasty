@@ -55,4 +55,13 @@ class ToastManagerTest extends TestCase
         $this->assertSame('like', $toasts[0]['type']);
         $this->assertSame('bell', $toasts[1]['type']);
     }
+
+    public function test_it_normalizes_blank_descriptions_to_null(): void
+    {
+        toasty()->success('Project created', '   ');
+
+        $toasts = session()->get(config('toasty.session_key'));
+
+        $this->assertNull($toasts[0]['description']);
+    }
 }
