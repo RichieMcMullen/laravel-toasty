@@ -44,4 +44,15 @@ class ToastManagerTest extends TestCase
         $this->assertSame('<strong>Custom</strong>', $toasts[0]['html']);
         $this->assertSame('bottom-right', $toasts[0]['position']);
     }
+
+    public function test_it_supports_like_and_bell_toast_types(): void
+    {
+        toasty()->like('Post liked', 'Your reaction was saved.');
+        toasty()->bell('Reminder set', 'We will notify you tomorrow.');
+
+        $toasts = session()->get(config('toasty.session_key'));
+
+        $this->assertSame('like', $toasts[0]['type']);
+        $this->assertSame('bell', $toasts[1]['type']);
+    }
 }

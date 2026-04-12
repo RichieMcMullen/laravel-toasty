@@ -15,6 +15,8 @@ class ToastPayload
         'info',
         'warning',
         'danger',
+        'like',
+        'bell',
     ];
 
     /**

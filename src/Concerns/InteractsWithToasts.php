@@ -78,6 +78,28 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
+    protected function dispatchLikeToast(string $message, ?string $description = null, array $options = []): void
+    {
+        $this->dispatchToast($message, array_merge($options, [
+            'type' => 'like',
+            'description' => $description ?? $options['description'] ?? null,
+        ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    protected function dispatchBellToast(string $message, ?string $description = null, array $options = []): void
+    {
+        $this->dispatchToast($message, array_merge($options, [
+            'type' => 'bell',
+            'description' => $description ?? $options['description'] ?? null,
+        ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
     protected function dispatchHtmlToast(string $html, array $options = []): void
     {
         $this->dispatchToast((string) ($options['message'] ?? ''), array_merge($options, [

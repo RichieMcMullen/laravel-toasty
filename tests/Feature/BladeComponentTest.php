@@ -25,4 +25,14 @@ class BladeComponentTest extends TestCase
         $html->assertSee('You have 3 new notifications.', false);
         $html->assertSee('window.toast', false);
     }
+
+    public function test_the_component_includes_theme_configuration(): void
+    {
+        config()->set('toasty.theme', 'toasty');
+
+        $html = $this->blade('<x-toasty::toasts />');
+
+        $html->assertSee('linear-gradient(135deg, #ef4444, #b91c1c)', false);
+        $html->assertSee('max_width', false);
+    }
 }

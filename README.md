@@ -1,8 +1,8 @@
 # Laravel Toasty
 
-![Laravel Reorderable](docs/images/header.png)
+![Laravel Toasty](docs/images/header.png)
 
-Pines-style toast notifications for Laravel `10` through `13`, with Blade and Livewire-friendly APIs.
+Toast notifications for Laravel `10` through `13`, with Blade, JavaScript, and Livewire-friendly APIs.
 
 This package wraps the [Pines toast pattern](https://devdojo.com/pines/docs/toast) in a Laravel package so you can:
 
@@ -19,6 +19,7 @@ This package wraps the [Pines toast pattern](https://devdojo.com/pines/docs/toas
 - Session-backed PHP toast helpers
 - Custom HTML toast support
 - Configurable position, layout, duration, spacing, and browser event names
+- Built-in `pines`, `toasty`, and `glass` visual presets with mergeable style overrides
 - Based on the Pines toast interaction model and `window.toast()` API
 
 ## Requirements
@@ -71,6 +72,7 @@ If you want per-layout overrides, use the component form:
     position="bottom-right"
     layout="expanded"
     :duration="6000"
+    theme="toasty"
 />
 ```
 
@@ -111,9 +113,78 @@ export default {
 
 ## Basic Usage
 
-### Flash a toast from PHP
+### Choose the right API
 
-Use the global helper:
+Use the API that matches where the toast is being triggered:
+
+| Situation | Use |
+| --- | --- |
+| Controller, middleware, service, action class, redirect flow | `toasty()->...` |
+| Livewire action and you want the toast immediately | `$this->dispatch...Toast()` |
+| Browser-only interaction or Alpine/JS button | `toast(...)` or `window.Toasty.toast(...)` |
+| Layout rendering | `<x-toasty::toasts />` or `@toasty` |
+
+### Will `toasty()` work in normal Laravel code?
+
+Yes. `toasty()` is a server-side helper backed by the session, so it works well in normal Laravel request code such as:
+
+- controllers
+- form actions
+- middleware
+- service classes called during a request
+- anything else that has access to the current request/session
+
+Example:
+
+```php
+toasty()->success('Profile updated');
+```
+
+### Will `toasty()` work in Livewire components?
+
+Yes, but with an important caveat:
+
+- `toasty()->...` inside Livewire is still session-based
+- that means it is best for redirects or the next full page load
+- if you want the toast to appear immediately after a Livewire action, use the Livewire trait methods instead
+
+Immediate Livewire example:
+
+```php
+$this->dispatchSuccessToast('Profile updated');
+```
+
+Session/redirect style example inside Livewire:
+
+```php
+toasty()->success('Profile updated');
+
+return $this->redirect(route('dashboard'));
+```
+
+### Will `toasty()` work inside Blade components?
+
+Not as the main way to trigger interactive toasts.
+
+Blade components are best used to render the toast stack:
+
+```blade
+<x-toasty::toasts />
+```
+
+If you want a click inside Blade or Alpine to show a toast immediately in the browser, use JavaScript:
+
+```html
+<button type="button" onclick="toast('Saved')">
+    Show toast
+</button>
+```
+
+### Session-based PHP helper
+
+Use the global helper when you want to queue a toast from PHP for the current request cycle or the next rendered page.
+
+Basic example:
 
 ```php
 toasty()->success('Profile updated');
@@ -141,9 +212,11 @@ Available shortcut methods:
 - `toasty()->info($message, $description = null, $options = [])`
 - `toasty()->warning($message, $description = null, $options = [])`
 - `toasty()->danger($message, $description = null, $options = [])`
+- `toasty()->like($message, $description = null, $options = [])`
+- `toasty()->bell($message, $description = null, $options = [])`
 - `toasty()->html($html, $options = [])`
 
-These helper methods are session-based, so they are best for controller actions, redirects, and other full-page request flows. If you are inside a Livewire action and want the toast immediately, use the Livewire trait methods instead of `toasty()->...`.
+These helper methods are session-based. They are ideal for controller actions, redirects, and standard request/response flows.
 
 ### Use the facade
 
@@ -155,7 +228,7 @@ Toasty::success('Saved');
 
 ### Use JavaScript directly
 
-The component registers the same global helper style described in the Pines docs:
+The rendered toast stack also exposes a browser helper:
 
 ```html
 <script>
@@ -185,7 +258,7 @@ Each toast accepts these options:
 | Option | Type | Description |
 | --- | --- | --- |
 | `description` | `string|null` | Secondary text under the title |
-| `type` | `default`, `success`, `info`, `warning`, `danger` | Toast style and icon |
+| `type` | `default`, `success`, `info`, `warning`, `danger`, `like`, `bell` | Toast style and icon |
 | `position` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` | Stack position |
 | `duration` | `int` | Auto-dismiss time in milliseconds. Use `0` to keep it open |
 | `closeable` | `bool` | Whether to show the close button |
@@ -272,6 +345,8 @@ class EditProfile extends Component
 }
 ```
 
+Use the Livewire trait when you want the toast immediately after the action completes without waiting for a full page reload or redirect.
+
 Available Livewire helpers:
 
 - `$this->dispatchToast($message, $options = [])`
@@ -279,9 +354,11 @@ Available Livewire helpers:
 - `$this->dispatchInfoToast($message, $description = null, $options = [])`
 - `$this->dispatchWarningToast($message, $description = null, $options = [])`
 - `$this->dispatchDangerToast($message, $description = null, $options = [])`
+- `$this->dispatchLikeToast($message, $description = null, $options = [])`
+- `$this->dispatchBellToast($message, $description = null, $options = [])`
 - `$this->dispatchHtmlToast($html, $options = [])`
 
-Because the frontend listens for browser events, the same stack works for Blade pages, standard redirects, and Livewire component updates.
+Because the frontend listens for browser events, the same stack works across Blade pages, redirects, and Livewire updates.
 
 ## Configuration
 
@@ -298,6 +375,13 @@ return [
     'padding_between' => 15,
     'closeable' => true,
     'z_index' => 99,
+    'theme' => 'pines',
+    'themes' => [
+        // bundled presets...
+    ],
+    'styles' => [
+        // optional overrides...
+    ],
 ];
 ```
 
@@ -312,6 +396,60 @@ return [
 - `padding_between`: gap between expanded toasts
 - `closeable`: default close button visibility
 - `z_index`: z-index applied to the container
+- `theme`: active visual preset, one of `pines`, `toasty`, or `glass`
+- `themes`: bundled preset definitions
+- `styles`: an override array merged into the active theme
+
+### Available themes
+
+- `pines`: light, clean, and closest to the original Pines look
+- `toasty`: warm gradients and deeper shadows inspired by the promo artwork
+- `glass`: cooler translucent cards with a soft glassmorphism feel
+
+### Promo-style theme
+
+The bundled `toasty` preset is meant to better match the package artwork:
+
+- wider cards
+- rounder corners
+- deeper shadows
+- warm glows
+- full-surface success, warning, info, and danger gradients
+
+If you want the lighter original look instead:
+
+```php
+'theme' => 'pines',
+```
+
+If you want a softer translucent look instead:
+
+```php
+'theme' => 'glass',
+```
+
+### Override only what you need
+
+You can keep the `toasty` preset and override a few values:
+
+```php
+'theme' => 'toasty',
+
+'styles' => [
+    'max_width' => '30rem',
+    'base' => [
+        'radius' => '1.5rem',
+    ],
+    'types' => [
+        'success' => [
+            'background' => 'linear-gradient(135deg, #4d7c0f, #166534)',
+        ],
+        'warning' => [
+            'title_color' => '#3b1d00',
+        ],
+    ],
+],
+```
 
 ## Blade API
 
@@ -331,6 +469,24 @@ return [
     :padding-between-toasts="20"
     :closeable="false"
     :z-index="120"
+    theme="toasty"
+/>
+```
+
+### Render with inline style overrides
+
+```blade
+<x-toasty::toasts
+    theme="toasty"
+    :styles="[
+        'max_width' => '30rem',
+        'base' => ['radius' => '1.5rem'],
+        'types' => [
+            'danger' => [
+                'background' => 'linear-gradient(135deg, #dc2626, #7f1d1d)',
+            ],
+        ],
+    ]"
 />
 ```
 

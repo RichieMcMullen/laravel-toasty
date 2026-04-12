@@ -72,6 +72,28 @@ class ToastManager
     /**
      * @param  array<string, mixed>  $options
      */
+    public function like(string $message, ?string $description = null, array $options = []): static
+    {
+        return $this->flash($message, array_merge($options, [
+            'type' => 'like',
+            'description' => $description ?? $options['description'] ?? null,
+        ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    public function bell(string $message, ?string $description = null, array $options = []): static
+    {
+        return $this->flash($message, array_merge($options, [
+            'type' => 'bell',
+            'description' => $description ?? $options['description'] ?? null,
+        ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
     public function html(string $html, array $options = []): static
     {
         return $this->flash((string) ($options['message'] ?? ''), array_merge($options, [
