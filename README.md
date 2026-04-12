@@ -36,23 +36,6 @@ The package ships Blade markup that uses Tailwind utility classes. If your app d
 composer require atomcoder/laravel-toasty
 ```
 
-If you are installing this package locally before publishing it to Packagist, add it as a path repository in your app's `composer.json` and require the explicit stable version:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../packages/laravel-toasty"
-        }
-    ]
-}
-```
-
-```bash
-composer require atomcoder/laravel-toasty:^0.1.0
-```
-
 Optional: publish the config file.
 
 ```bash
