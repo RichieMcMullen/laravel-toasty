@@ -13,6 +13,7 @@ class BladeComponentTest extends TestCase
         $html->assertSee('window.ToastyComponent', false);
         $html->assertSee('x-teleport="body"', false);
         $html->assertSee('toasty-show', false);
+        $html->assertSee('window.Toasty.activeMountId', false);
     }
 
     public function test_the_component_includes_flashed_toasts_in_the_payload(): void

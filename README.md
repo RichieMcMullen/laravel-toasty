@@ -65,6 +65,8 @@ Or use the Blade directive:
 @toasty
 ```
 
+Do not render the stack in both a header layout and a sidebar layout. Toasty should be mounted once per page so the container can own the viewport position correctly.
+
 If you want per-layout overrides, use the component form:
 
 ```blade
@@ -517,6 +519,7 @@ That lets you keep the package API while fully restyling the markup.
 ## Notes
 
 - Render the stack only once per page.
+- If a toast looks clipped into a page corner, check for duplicate `<x-toasty::toasts />` mounts first.
 - If you use Livewire Navigate or a shared app shell, keep the toast stack in the top-level layout.
 - The default browser events are namespaced as `toasty-show` and `toasty-set-layout` to avoid collisions with libraries like Flux.
 - Custom HTML toasts are powerful, but they should only contain trusted markup.

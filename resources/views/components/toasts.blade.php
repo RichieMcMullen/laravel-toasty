@@ -7,7 +7,7 @@
     'layoutEventName' => config('toasty.layout_event_name', 'toasty-set-layout'),
     'closeable' => (bool) config('toasty.closeable', true),
     'zIndex' => (int) config('toasty.z_index', 99),
-    'theme' => config('toasty.theme', 'toasty'),
+    'theme' => config('toasty.theme', 'pines'),
     'styles' => config('toasty.styles', []),
 ])
 
@@ -35,7 +35,8 @@
 @endphp
 
 <div {{ $attributes->class('contents') }} x-data="window.ToastyComponent(@js($componentConfig), @js($initialToasts))" x-init="boot()">
-    <template x-teleport="body">
+    <template x-if="!disabled">
+        <template x-teleport="body">
         <ul
             x-ref="container"
             x-cloak
@@ -43,9 +44,8 @@
             @mouseleave="toastsHovered = false"
             x-on:{{ $eventName }}.window="showFromEvent($event.detail)"
             x-on:{{ $layoutEventName }}.window="setLayout($event.detail.layout ?? layout)"
-            class="fixed block w-[calc(100%-1.5rem)] group sm:w-full"
+            class="group"
             :style="containerStyle()"
-            :class="containerPositionClasses()"
         >
             <template x-for="toast in toasts" :key="toast.id">
                 <li
@@ -54,10 +54,10 @@
                     x-init="initToast(toast)"
                     @mouseover="toastHovered = true"
                     @mouseout="toastHovered = false"
-                    class="absolute w-full duration-300 ease-out select-none"
+                    :style="toastItemStyle()"
                 >
                     <span
-                        class="relative flex flex-col items-start w-full overflow-hidden transition-all duration-300 ease-out group"
+                        class="group"
                         :style="toastCardStyle(toast)"
                         :class="{ 'p-4': !toast.html, 'p-0': toast.html }"
                     >
@@ -128,6 +128,7 @@
                 </li>
             </template>
         </ul>
+        </template>
     </template>
 </div>
 
@@ -176,7 +177,16 @@
             window.toast = window.toast || window.Toasty.toast;
 
             window.ToastyComponent = function (config = {}, initialToasts = []) {
+                const mountId = 'toasty-mount-' + Math.random().toString(16).slice(2);
+                const hasActiveMount = Boolean(window.Toasty.activeMountId);
+
+                if (! hasActiveMount) {
+                    window.Toasty.activeMountId = mountId;
+                }
+
                 return {
+                    mountId,
+                    disabled: hasActiveMount,
                     toasts: [],
                     timers: {},
                     toastsHovered: false,
@@ -192,6 +202,11 @@
                     theme: config.theme ?? {},
                     initialToasts,
                     boot() {
+                        if (this.disabled) {
+                            console.warn('[Toasty] Duplicate toast stack detected. Render <x-toasty::toasts /> only once per page.');
+                            return;
+                        }
+
                         window.Toasty.defaults = {
                             eventName: this.eventName,
                             layoutEventName: this.layoutEventName,
@@ -467,9 +482,55 @@
                         container.style.height = `${firstRect.height}px`;
                     },
                     containerStyle() {
-                        return {
+                        const maxWidth = this.theme.max_width ?? '20rem';
+                        const safeTop = 'calc(1rem + env(safe-area-inset-top, 0px))';
+                        const safeBottom = 'calc(1rem + env(safe-area-inset-bottom, 0px))';
+                        const safeLeft = 'calc(1rem + env(safe-area-inset-left, 0px))';
+                        const safeRight = 'calc(1rem + env(safe-area-inset-right, 0px))';
+                        const style = {
+                            position: 'fixed',
+                            display: 'block',
+                            listStyle: 'none',
+                            margin: '0',
+                            padding: '0',
+                            width: `min(calc(100vw - 2rem), ${maxWidth})`,
+                            maxWidth,
+                            pointerEvents: 'none',
                             zIndex: this.zIndex,
-                            maxWidth: this.theme.max_width ?? '20rem',
+                        };
+
+                        if (this.position === 'top-right') {
+                            style.top = safeTop;
+                            style.right = safeRight;
+                        } else if (this.position === 'top-left') {
+                            style.top = safeTop;
+                            style.left = safeLeft;
+                        } else if (this.position === 'bottom-right') {
+                            style.bottom = safeBottom;
+                            style.right = safeRight;
+                        } else if (this.position === 'bottom-left') {
+                            style.bottom = safeBottom;
+                            style.left = safeLeft;
+                        } else if (this.position === 'bottom-center') {
+                            style.bottom = safeBottom;
+                            style.left = '50%';
+                            style.transform = 'translateX(-50%)';
+                        } else {
+                            style.top = safeTop;
+                            style.left = '50%';
+                            style.transform = 'translateX(-50%)';
+                        }
+
+                        return {
+                            ...style,
+                        };
+                    },
+                    toastItemStyle() {
+                        return {
+                            position: 'absolute',
+                            width: '100%',
+                            userSelect: 'none',
+                            transition: 'all 300ms ease',
                         };
                     },
                     styleProfile(toast) {
@@ -493,6 +554,14 @@
                             backdropFilter: `blur(${blur})`,
                             WebkitBackdropFilter: `blur(${blur})`,
                             fontFamily: profile.font_family ?? 'inherit',
+                            position: 'relative',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            width: '100%',
+                            overflow: 'hidden',
+                            pointerEvents: 'auto',
+                            transition: 'all 300ms ease',
                         };
                     },
                     toastGlowStyle(toast) {
@@ -540,16 +609,6 @@
                             background: hovered
                                 ? (profile.close_hover_background ?? 'transparent')
                                 : 'transparent',
-                        };
-                    },
-                    containerPositionClasses() {
-                        return {
-                            'right-0 top-0 sm:mt-6 sm:mr-6': this.position === 'top-right',
-                            'left-0 top-0 sm:mt-6 sm:ml-6': this.position === 'top-left',
-                            'left-1/2 -translate-x-1/2 top-0 sm:mt-6': this.position === 'top-center',
-                            'right-0 bottom-0 sm:mr-6 sm:mb-6': this.position === 'bottom-right',
-                            'left-0 bottom-0 sm:ml-6 sm:mb-6': this.position === 'bottom-left',
-                            'left-1/2 -translate-x-1/2 bottom-0 sm:mb-6': this.position === 'bottom-center',
                         };
                     },
                 };
