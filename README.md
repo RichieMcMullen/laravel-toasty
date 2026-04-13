@@ -10,7 +10,7 @@
 
 ![Laravel Toasty](docs/images/header.png)
 
-Collision-safe toast notifications for Laravel `10` through `13`.
+Toast notifications for Laravel Blade, Livewire, Alpine, and JavaScript.
 
 Laravel Toasty works with:
 
