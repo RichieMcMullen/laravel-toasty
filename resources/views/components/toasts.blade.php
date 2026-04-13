@@ -190,7 +190,7 @@
         }
     </style>
 
-    <script>
+    <template id="laravel-toasty-runtime-source">
         (() => {
             if (window.LaravelToastyComponent) {
                 return;
@@ -268,7 +268,7 @@
                     initialToasts,
                     boot() {
                         if (this.disabled) {
-                            console.warn('[Laravel Toasty] Duplicate toast stack detected. Render <x-laravel-toasty::toasts /> only once per page.');
+                            console.warn('[Laravel Toasty] Duplicate toast stack detected. Render the Laravel Toasty stack only once per page.');
                             return;
                         }
 
@@ -688,10 +688,26 @@
                 };
             };
         })();
+    </template>
+
+    <script>
+        (() => {
+            if (window.LaravelToastyComponent) {
+                return;
+            }
+
+            const source = document.getElementById('laravel-toasty-runtime-source');
+
+            if (! source) {
+                return;
+            }
+
+            new Function(source.innerHTML)();
+        })();
     </script>
 @endonce
 
-<div {{ $attributes->class('lty-root') }} x-data="window.LaravelToastyComponent(@js($componentConfig), @js($initialToasts))" x-init="boot()">
+<div {{ $attributes->class('lty-root') }} x-data="(() => { if (! window.LaravelToastyComponent) { const source = document.getElementById('laravel-toasty-runtime-source'); if (source) { new Function(source.innerHTML)(); } } return window.LaravelToastyComponent(@js($componentConfig), @js($initialToasts)); })()" x-init="boot()">
     <template x-teleport="body">
         <ul
             x-ref="container"

@@ -12,8 +12,8 @@ class BladeComponentTest extends TestCase
 
         $html->assertSee('window.LaravelToastyComponent', false);
         $html->assertSeeInOrder([
-            'window.LaravelToastyComponent',
-            'x-data="window.LaravelToastyComponent',
+            'id="laravel-toasty-runtime-source"',
+            'x-data="(() => { if (! window.LaravelToastyComponent)',
         ], false);
         $html->assertSee('x-teleport="body"', false);
         $html->assertSee('laravel-toasty:notify', false);
