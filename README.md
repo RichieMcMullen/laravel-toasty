@@ -30,8 +30,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 - `@laravelToasty` Blade directive
 - `laravel_toasty()` helper
 - `LaravelToasty` facade alias
-- immediate Livewire support with `laravel_toasty($this)` or `LaravelToasty::for($this)`
-- optional lower-level Livewire trait methods
+- Livewire support through the `InteractsWithToasts` trait
 - `window.LaravelToasty` JavaScript API
 - bundled CSS inside the package, so Tailwind setup is not required
 
@@ -106,7 +105,7 @@ laravel_toasty()->success('Profile updated');
 Livewire immediate toast:
 
 ```php
-laravel_toasty($this)->success('Profile updated');
+$this->dispatchLaravelToastySuccess('Profile updated');
 ```
 
 Browser JavaScript:
@@ -136,7 +135,7 @@ That stores the toast in the session, and the next page render shows it.
 Use this inside a Livewire component action:
 
 ```php
-laravel_toasty($this)->success('Saved');
+$this->dispatchLaravelToastySuccess('Saved');
 ```
 
 That dispatches a browser event immediately through the current component, so the user sees the toast without leaving the page.
@@ -147,14 +146,12 @@ That dispatches a browser event immediately through the current component, so th
 
 ```php
 laravel_toasty()
-laravel_toasty($this)
 ```
 
 ### Facade
 
 ```php
 LaravelToasty::success('Saved');
-LaravelToasty::for($this)->success('Saved');
 ```
 
 ### Blade
@@ -241,9 +238,7 @@ class DashboardController
 }
 ```
 
-### Example 4: Livewire with unified helper
-
-This is the recommended Livewire API.
+### Example 4: Livewire with the trait
 
 ```php
 <?php
@@ -251,9 +246,12 @@ This is the recommended Livewire API.
 namespace App\Livewire;
 
 use Livewire\Component;
+use Atomcoder\Toasty\Concerns\InteractsWithToasts;
 
 class EditProfile extends Component
 {
+    use InteractsWithToasts;
+
     public string $name = '';
 
     public function save(): void
@@ -262,7 +260,7 @@ class EditProfile extends Component
             'name' => $this->name,
         ]);
 
-        laravel_toasty($this)->success(
+        $this->dispatchLaravelToastySuccess(
             'Profile updated',
             'Your changes were saved immediately.',
             ['position' => 'top-right']
@@ -276,29 +274,7 @@ class EditProfile extends Component
 }
 ```
 
-### Example 5: Livewire with facade
-
-```php
-<?php
-
-namespace App\Livewire;
-
-use Livewire\Component;
-use LaravelToasty;
-
-class BillingForm extends Component
-{
-    public function save(): void
-    {
-        LaravelToasty::for($this)->info(
-            'Billing details updated',
-            'Your payment information is now current.'
-        );
-    }
-}
-```
-
-### Example 6: Livewire redirect
+### Example 5: Livewire redirect
 
 If your Livewire action redirects away, use the normal session helper:
 
@@ -318,33 +294,19 @@ public function createWorkspace()
 }
 ```
 
-### Example 7: Livewire trait alternative
+### Example 6: More Livewire trait methods
 
-If you prefer dedicated Livewire-specific methods, the trait still works:
+The trait gives you dedicated immediate-dispatch methods:
 
 ```php
-<?php
-
-namespace App\Livewire;
-
-use Livewire\Component;
-use Atomcoder\Toasty\Concerns\InteractsWithToasts;
-
-class EditAccount extends Component
-{
-    use InteractsWithToasts;
-
-    public function save(): void
-    {
-        $this->dispatchLaravelToastySuccess(
-            'Account updated',
-            'Your settings were saved.'
-        );
-    }
-}
+$this->dispatchLaravelToastyInfo('Draft saved');
+$this->dispatchLaravelToastyWarning('Storage almost full');
+$this->dispatchLaravelToastyDanger('Delete failed', 'Please try again.');
+$this->dispatchLaravelToastyLike('Post liked');
+$this->dispatchLaravelToastyBell('Reminder set', 'We will notify you tomorrow.');
 ```
 
-### Example 8: Blade and Alpine button
+### Example 7: Blade and Alpine button
 
 ```blade
 <button
@@ -359,7 +321,7 @@ class EditAccount extends Component
 </button>
 ```
 
-### Example 9: Plain JavaScript
+### Example 8: Plain JavaScript
 
 ```html
 <script>
@@ -372,7 +334,7 @@ class EditAccount extends Component
 </script>
 ```
 
-### Example 10: HTML toast
+### Example 9: HTML toast
 
 Only use trusted HTML.
 
@@ -390,7 +352,7 @@ HTML, [
 ]);
 ```
 
-### Example 11: Multiple toasts in one request
+### Example 10: Multiple toasts in one request
 
 ```php
 laravel_toasty()->success('Project created');
@@ -398,7 +360,7 @@ laravel_toasty()->info('Invite your team');
 laravel_toasty()->warning('Remember to configure billing');
 ```
 
-### Example 12: Inspecting and clearing queued session toasts
+### Example 11: Inspecting and clearing queued session toasts
 
 This only works with the session queue, not the already-mounted browser stack.
 
@@ -412,7 +374,7 @@ if (count($toasts) > 5) {
 
 ## Available Methods
 
-These methods are available through `laravel_toasty()`, `laravel_toasty($this)`, and `LaravelToasty::for(...)`:
+These methods are available through `laravel_toasty()` and `LaravelToasty`:
 
 - `flash($message, $options = [])`
 - `success($message, $description = null, $options = [])`
@@ -635,14 +597,10 @@ Check:
 If you stay on the same page, use:
 
 ```php
-laravel_toasty($this)->success('Saved');
+$this->dispatchLaravelToastySuccess('Saved');
 ```
 
-or:
-
-```php
-LaravelToasty::for($this)->success('Saved');
-```
+with the `InteractsWithToasts` trait on the component.
 
 If you redirect away, use:
 
