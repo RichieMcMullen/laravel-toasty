@@ -4,6 +4,8 @@
 
 Toast notifications for Laravel `10` through `13` with collision-safe Blade, PHP, Livewire, and JavaScript APIs.
 
+See [CHANGELOG.md](CHANGELOG.md) for package history.
+
 ## What Changed
 
 This package now defaults to uniquely named public APIs so it can live alongside Flux toasts or other toast packages without stepping on shared globals.
