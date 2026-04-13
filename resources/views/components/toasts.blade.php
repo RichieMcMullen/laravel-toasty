@@ -35,8 +35,7 @@
 @endphp
 
 <div {{ $attributes->class('contents') }} x-data="window.ToastyComponent(@js($componentConfig), @js($initialToasts))" x-init="boot()">
-    <template x-if="!disabled">
-        <template x-teleport="body">
+    <template x-teleport="body">
         <ul
             x-ref="container"
             x-cloak
@@ -128,7 +127,6 @@
                 </li>
             </template>
         </ul>
-        </template>
     </template>
 </div>
 
@@ -238,6 +236,10 @@
                         });
                     },
                     showFromEvent(detail = {}) {
+                        if (this.disabled) {
+                            return;
+                        }
+
                         if (detail.layout) {
                             this.setLayout(detail.layout);
                         }
