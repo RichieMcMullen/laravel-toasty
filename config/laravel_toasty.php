@@ -7,13 +7,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | These browser events power the toast stack. "event_name" is what the
-    | global window.toast() helper and Livewire trait dispatch. The layout
-    | event allows switching between the default stacked layout and the fully
-    | expanded layout at runtime.
+    | namespaced window.LaravelToasty API and Livewire trait dispatch. The
+    | layout event allows switching between the default stacked layout and the
+    | fully expanded layout at runtime.
     |
     */
-    'event_name' => 'toasty-show',
-    'layout_event_name' => 'toasty-set-layout',
+    'event_name' => 'laravel-toasty:notify',
+    'layout_event_name' => 'laravel-toasty:layout',
 
     /*
     |--------------------------------------------------------------------------
@@ -24,7 +24,20 @@ return [
     | where the rendered toast stack consumes and shows them on page load.
     |
     */
-    'session_key' => 'toasty.toasts',
+    'session_key' => 'laravel_toasty.toasts',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compatibility Shims
+    |--------------------------------------------------------------------------
+    |
+    | This package now defaults to collision-safe names so it can coexist with
+    | Flux and other toast systems. If you are upgrading an existing app and
+    | need the old Blade namespace/directive and browser helpers temporarily,
+    | you can opt back into them here.
+    |
+    */
+    'legacy_aliases' => false,
 
     /*
     |--------------------------------------------------------------------------

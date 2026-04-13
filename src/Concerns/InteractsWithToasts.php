@@ -3,6 +3,7 @@
 namespace Atomcoder\Toasty\Concerns;
 
 use LogicException;
+use Atomcoder\Toasty\Support\PackageConfig;
 use Atomcoder\Toasty\Support\ToastPayload;
 
 trait InteractsWithToasts
@@ -10,7 +11,7 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchToast(string $message, array $options = []): void
+    protected function dispatchLaravelToasty(string $message, array $options = []): void
     {
         if (! method_exists($this, 'dispatch')) {
             throw new LogicException('The InteractsWithToasts trait requires a dispatch() method.');
@@ -19,7 +20,7 @@ trait InteractsWithToasts
         $payload = ToastPayload::make($message, $options);
 
         $this->dispatch(
-            (string) config('toasty.event_name', 'toasty-show'),
+            (string) PackageConfig::get('event_name', 'laravel-toasty:notify'),
             message: $payload['message'],
             description: $payload['description'],
             type: $payload['type'],
@@ -34,9 +35,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchSuccessToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastySuccess(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'success',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -45,9 +46,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchInfoToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastyInfo(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'info',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -56,9 +57,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchWarningToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastyWarning(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'warning',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -67,9 +68,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchDangerToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastyDanger(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'danger',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -78,9 +79,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchLikeToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastyLike(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'like',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -89,9 +90,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchBellToast(string $message, ?string $description = null, array $options = []): void
+    protected function dispatchLaravelToastyBell(string $message, ?string $description = null, array $options = []): void
     {
-        $this->dispatchToast($message, array_merge($options, [
+        $this->dispatchLaravelToasty($message, array_merge($options, [
             'type' => 'bell',
             'description' => $description ?? $options['description'] ?? null,
         ]));
@@ -100,9 +101,9 @@ trait InteractsWithToasts
     /**
      * @param  array<string, mixed>  $options
      */
-    protected function dispatchHtmlToast(string $html, array $options = []): void
+    protected function dispatchLaravelToastyHtml(string $html, array $options = []): void
     {
-        $this->dispatchToast((string) ($options['message'] ?? ''), array_merge($options, [
+        $this->dispatchLaravelToasty((string) ($options['message'] ?? ''), array_merge($options, [
             'html' => $html,
         ]));
     }

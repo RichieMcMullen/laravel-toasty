@@ -52,11 +52,11 @@ class ToastPayload
             'position' => self::valueOrDefault(
                 Arr::get($options, 'position'),
                 self::POSITIONS,
-                (string) config('toasty.position', 'top-center')
+                (string) PackageConfig::get('position', 'top-center')
             ),
             'html' => self::stringOrNull(Arr::get($options, 'html')),
-            'duration' => max(0, (int) Arr::get($options, 'duration', config('toasty.duration', 4000))),
-            'closeable' => (bool) Arr::get($options, 'closeable', config('toasty.closeable', true)),
+            'duration' => max(0, (int) Arr::get($options, 'duration', PackageConfig::get('duration', 4000))),
+            'closeable' => (bool) Arr::get($options, 'closeable', PackageConfig::get('closeable', true)),
         ];
 
         $layout = Arr::get($options, 'layout');
@@ -65,7 +65,7 @@ class ToastPayload
             $payload['layout'] = self::valueOrDefault(
                 $layout,
                 self::LAYOUTS,
-                (string) config('toasty.layout', 'default')
+                (string) PackageConfig::get('layout', 'default')
             );
         }
 

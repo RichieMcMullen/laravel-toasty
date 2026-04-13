@@ -3,6 +3,7 @@
 namespace Atomcoder\Toasty;
 
 use Illuminate\Contracts\Session\Session;
+use Atomcoder\Toasty\Support\PackageConfig;
 use Atomcoder\Toasty\Support\ToastPayload;
 
 class ToastManager
@@ -118,6 +119,6 @@ class ToastManager
 
     protected function sessionKey(): string
     {
-        return (string) config('toasty.session_key', 'toasty.toasts');
+        return (string) PackageConfig::get('session_key', 'laravel_toasty.toasts');
     }
 }

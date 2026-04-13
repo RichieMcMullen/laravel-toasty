@@ -50,7 +50,7 @@
                 "Atomcoder\\Toasty\\ToastyServiceProvider"
             ],
             "aliases": {
-                "Toasty": "Atomcoder\\Toasty\\Facades\\Toasty"
+                "LaravelToasty": "Atomcoder\\Toasty\\Facades\\LaravelToasty"
             }
         }
     },

@@ -28,7 +28,7 @@ class InteractsWithToastsTest extends TestCase
 
             public function trigger(): void
             {
-                $this->dispatchSuccessToast('Saved', 'Changes stored.', [
+                $this->dispatchLaravelToastySuccess('Saved', 'Changes stored.', [
                     'position' => 'top-right',
                 ]);
             }
@@ -36,7 +36,7 @@ class InteractsWithToastsTest extends TestCase
 
         $component->trigger();
 
-        $this->assertSame('toasty-show', $component->event);
+        $this->assertSame('laravel-toasty:notify', $component->event);
         $this->assertSame('Saved', $component->payload['message']);
         $this->assertSame('Changes stored.', $component->payload['description']);
         $this->assertSame('success', $component->payload['type']);
