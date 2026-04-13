@@ -74,8 +74,8 @@ The public package surface is now:
 
 - Blade component: `<x-laravel-toasty::toasts />`
 - Blade directive: `@laravelToasty`
-- PHP helper: `laravel_toasty()` and `laravel_toasty($this)`
-- Laravel facade alias: `LaravelToasty` and `LaravelToasty::for($this)`
+- PHP helper: `laravel_toasty()`
+- Laravel facade alias: `LaravelToasty`
 - Livewire trait methods: `dispatchLaravelToasty...()`
 - Browser events: `laravel-toasty:notify` and `laravel-toasty:layout`
 - JavaScript API: `window.LaravelToasty`
@@ -98,9 +98,9 @@ This version also no longer relies on your app compiling vendor Tailwind classes
 | --- | --- | --- |
 | Blade component | `<x-laravel-toasty::toasts />` | You want to render the stack and optionally override props inline |
 | Blade directive | `@laravelToasty` | You want the simplest stack render using config defaults |
-| Unified helper | `laravel_toasty()` or `laravel_toasty($this)` | You want one namespaced helper for both session toasts and immediate Livewire toasts |
-| Facade alias | `LaravelToasty` or `LaravelToasty::for($this)` | You prefer a facade-style API with the same session-or-dispatch model |
-| Livewire trait | `InteractsWithToasts` | You want the lower-level Livewire-specific dispatch methods directly on the component |
+| PHP helper | `laravel_toasty()` | You are in a normal Laravel request and want a toast on the next page render |
+| Facade alias | `LaravelToasty` | You prefer a facade-style API instead of the helper |
+| Livewire trait | `InteractsWithToasts` | You want immediate, in-place toasts after a Livewire action |
 | JavaScript global | `window.LaravelToasty` | You want to trigger toasts from Alpine or browser-side code |
 | Browser events | `laravel-toasty:notify`, `laravel-toasty:layout` | You want to dispatch directly to the stack without the helper APIs |
 | Published config | `config/laravel_toasty.php` | You want to change defaults, theme, event names, or compatibility shims |
@@ -156,12 +156,7 @@ This is the simplest setup:
 
 ### Livewire apps
 
-The installation is the same, but the preferred call is now the same helper or facade entry point you already use elsewhere:
-
-- `laravel_toasty($this)->success(...)`
-- `LaravelToasty::for($this)->success(...)`
-
-That tells the package to dispatch immediately through the current Livewire component instead of flashing to the session.
+The installation is the same, but the most important difference is how you trigger the toast. For immediate in-page feedback, use the `InteractsWithToasts` trait and the `dispatchLaravelToasty...()` methods. The helper still works in Livewire too, but only for the next full page render because it is session-backed.
 
 ### Alpine or JavaScript-heavy pages
 
@@ -224,7 +219,7 @@ laravel_toasty()->success('Profile updated');
 From Livewire:
 
 ```php
-laravel_toasty($this)->success('Profile updated');
+$this->dispatchLaravelToastySuccess('Profile updated');
 ```
 
 From JavaScript:
@@ -243,12 +238,11 @@ Laravel Toasty supports three delivery modes.
 
 Regardless of where a toast starts, the package tries to normalize the payload into one consistent shape before rendering it.
 
-1. Helper or facade calls with no target normalize the payload and flash it into the session.
-2. Helper or facade calls with a Livewire-like target normalize the payload and dispatch a browser event immediately.
-3. The Livewire trait is still available and dispatches the same browser event directly from the component.
-4. JavaScript calls dispatch the same browser event directly from the browser.
-5. The rendered Blade stack reads initial session toasts on page load and listens for future browser events.
-6. The Alpine runtime owns timers, stacking, hover expansion, close behavior, layout changes, and theme application.
+1. PHP helper and facade calls normalize the payload and flash it into the session.
+2. Livewire trait calls normalize the payload and dispatch a browser event immediately.
+3. JavaScript calls dispatch the same browser event directly from the browser.
+4. The rendered Blade stack reads initial session toasts on page load and listens for future browser events.
+5. The Alpine runtime owns timers, stacking, hover expansion, close behavior, layout changes, and theme application.
 
 ### 1. Session-backed PHP toasts
 
@@ -263,9 +257,9 @@ This is ideal for:
 - middleware inside the `web` stack
 - request-time service classes
 
-### 2. Targeted Livewire browser-event toasts
+### 2. Livewire browser-event toasts
 
-When you call `laravel_toasty($this)->success(...)` or `LaravelToasty::for($this)->success(...)`, the package dispatches a browser event from your Livewire component with the normalized toast payload.
+When you use the `InteractsWithToasts` trait, the package dispatches a browser event from your Livewire component with the normalized toast payload.
 
 The rendered toast stack listens for that browser event and shows the toast immediately.
 
@@ -274,8 +268,6 @@ This is ideal for:
 - instant Livewire save notifications
 - validation-adjacent feedback
 - real-time UI interactions with no redirect
-
-The `InteractsWithToasts` trait remains available if you prefer dedicated Livewire methods like `dispatchLaravelToastySuccess(...)`, but it is no longer the only immediate-dispatch option.
 
 ### 3. Direct JavaScript toasts
 
@@ -418,21 +410,13 @@ Your JavaScript or Livewire code must dispatch to those same event names for tha
 
 ## PHP Usage
 
-The unified helper is:
+The PHP helper is:
 
 ```php
 laravel_toasty()
 ```
 
-If you pass no argument, the helper uses the session-backed transport.
-
-If you pass a Livewire-like component instance that exposes `dispatch()`, the helper uses immediate browser-event dispatch:
-
-```php
-laravel_toasty($this)
-```
-
-This gives you one helper entry point for both standard Laravel requests and Livewire component actions.
+It resolves the package toast manager from the container.
 
 ### Available PHP methods
 
@@ -447,16 +431,6 @@ This gives you one helper entry point for both standard Laravel requests and Liv
 - `laravel_toasty()->all()`
 - `laravel_toasty()->clear()`
 
-The same methods are also available through a targeted Livewire call:
-
-- `laravel_toasty($this)->success(...)`
-- `laravel_toasty($this)->info(...)`
-- `laravel_toasty($this)->warning(...)`
-- `laravel_toasty($this)->danger(...)`
-- `laravel_toasty($this)->like(...)`
-- `laravel_toasty($this)->bell(...)`
-- `laravel_toasty($this)->html(...)`
-
 ### Basic examples
 
 ```php
@@ -468,8 +442,6 @@ laravel_toasty()->warning('Heads up', 'Billing details need attention.', [
     'position' => 'bottom-right',
     'duration' => 8000,
 ]);
-
-laravel_toasty($this)->success('Saved without leaving the page');
 ```
 
 ### Generic flash method
@@ -598,13 +570,11 @@ if (count($toasts) > 5) {
 }
 ```
 
-`all()` and `clear()` work against the server-side session queue. They are useful for redirect-based request flows, but they do not inspect the already-mounted browser stack in a Livewire page.
-
 ### When not to use the PHP helper
 
 Do not treat `laravel_toasty()` as a general background-job notification system.
 
-With no target, it is session-backed, so it is best used during the web request lifecycle:
+It is session-backed, so it is best used during the web request lifecycle:
 
 - web controllers
 - form submissions
@@ -612,7 +582,7 @@ With no target, it is session-backed, so it is best used during the web request 
 - middleware in the `web` stack
 - request-scoped service usage
 
-If you need immediate feedback inside Livewire, use `laravel_toasty($this)` or `LaravelToasty::for($this)`.
+If you need immediate feedback inside Livewire, use the Livewire trait methods instead.
 
 ## Facade Usage
 
@@ -627,15 +597,6 @@ LaravelToasty::success('Saved');
 LaravelToasty::warning('Heads up', 'Please review the account settings.');
 ```
 
-For immediate Livewire dispatch, target the current component:
-
-```php
-use LaravelToasty;
-
-LaravelToasty::for($this)->info('Welcome back');
-LaravelToasty::for($this)->success('Profile updated', 'Changes saved instantly.');
-```
-
 ### Using the facade class directly
 
 ```php
@@ -646,60 +607,7 @@ LaravelToasty::info('Welcome back');
 
 ## Livewire Usage
 
-The preferred Livewire API is now the same unified helper or facade entry point, just with the current component passed in.
-
-### Preferred unified helper in Livewire
-
-```php
-<?php
-
-namespace App\Livewire;
-
-use Livewire\Component;
-
-class EditProfile extends Component
-{
-    public function save(): void
-    {
-        laravel_toasty($this)->success(
-            'Profile updated',
-            'Your account details are now current.',
-            ['position' => 'top-right']
-        );
-    }
-
-    public function render()
-    {
-        return view('livewire.edit-profile');
-    }
-}
-```
-
-### Preferred unified facade in Livewire
-
-```php
-<?php
-
-namespace App\Livewire;
-
-use Livewire\Component;
-use LaravelToasty;
-
-class EditProfile extends Component
-{
-    public function save(): void
-    {
-        LaravelToasty::for($this)->success(
-            'Profile updated',
-            'Your account details are now current.'
-        );
-    }
-}
-```
-
-### Trait alternative
-
-The `InteractsWithToasts` trait still works and is fully supported. It is useful if you want dedicated Livewire-specific method names directly on the component.
+Use the `InteractsWithToasts` trait when you want the toast to appear immediately after a Livewire action completes.
 
 ```php
 <?php
@@ -717,8 +625,14 @@ class EditProfile extends Component
     {
         $this->dispatchLaravelToastySuccess(
             'Profile updated',
-            'Your account details are now current.'
+            'Your account details are now current.',
+            ['position' => 'top-right']
         );
+    }
+
+    public function render()
+    {
+        return view('livewire.edit-profile');
     }
 }
 ```
@@ -737,31 +651,31 @@ class EditProfile extends Component
 ### Livewire examples for each type
 
 ```php
-laravel_toasty($this)->info('Draft saved');
-laravel_toasty($this)->warning('Storage almost full');
-laravel_toasty($this)->danger('Delete failed', 'Please try again.');
-laravel_toasty($this)->like('Post liked');
-laravel_toasty($this)->bell('Reminder set', 'We will notify you tomorrow.');
+$this->dispatchLaravelToastyInfo('Draft saved');
+$this->dispatchLaravelToastyWarning('Storage almost full');
+$this->dispatchLaravelToastyDanger('Delete failed', 'Please try again.');
+$this->dispatchLaravelToastyLike('Post liked');
+$this->dispatchLaravelToastyBell('Reminder set', 'We will notify you tomorrow.');
 ```
 
 ### Livewire HTML example
 
 ```php
-laravel_toasty($this)->html(
+$this->dispatchLaravelToastyHtml(
     '<div style="padding:1rem;"><strong>Invite sent</strong><div style="margin-top:.5rem;">The user has been emailed.</div></div>',
     ['position' => 'bottom-right']
 );
 ```
 
-### Redirect flows vs immediate Livewire dispatch
+### Session helper vs Livewire trait
 
-Use immediate dispatch when the user stays on the current Livewire page:
+Use the trait for immediate in-page feedback:
 
 ```php
-laravel_toasty($this)->success('Saved');
+$this->dispatchLaravelToastySuccess('Saved');
 ```
 
-Use the session-backed helper if your Livewire action redirects and you want the next page render to show the toast:
+Use the helper if your Livewire action redirects and you want the next page render to show the toast:
 
 ```php
 laravel_toasty()->success('Saved');
@@ -771,7 +685,7 @@ return $this->redirect(route('dashboard'));
 
 ### Important Livewire note
 
-`laravel_toasty($this)` and `LaravelToasty::for($this)` require a target object with a `dispatch()` method. In practice that means a Livewire component or another compatible object exposing the same browser-event dispatching API.
+The trait requires a `dispatch()` method. In practice that means it is designed for Livewire components or other classes that expose the same browser-event dispatching API.
 
 ## JavaScript Usage
 
@@ -1024,16 +938,19 @@ Why this works well: the helper flashes the toast into the session, then the des
 
 ```php
 use Livewire\Component;
+use Atomcoder\Toasty\Concerns\InteractsWithToasts;
 
 class EditProfile extends Component
 {
+    use InteractsWithToasts;
+
     public function save(): void
     {
         auth()->user()->update([
             'name' => $this->name,
         ]);
 
-        laravel_toasty($this)->success(
+        $this->dispatchLaravelToastySuccess(
             'Profile updated',
             'Your changes were saved immediately.'
         );
@@ -1041,7 +958,7 @@ class EditProfile extends Component
 }
 ```
 
-Why this works well: the same helper API now targets the current Livewire component and dispatches a browser event immediately, so there is no need to wait for a redirect or full page reload.
+Why this works well: the Livewire trait dispatches a browser event immediately, so there is no need to wait for a redirect or full page reload.
 
 ### Livewire action that redirects to another page
 
@@ -1576,9 +1493,9 @@ Check:
 
 Check:
 
-- you are calling `laravel_toasty($this)` or `LaravelToasty::for($this)` from the Livewire component, or you are using `InteractsWithToasts`
+- your component uses `InteractsWithToasts`
 - the stack is mounted in the main layout
-- you are using an immediate-dispatch API rather than an untargeted session call when you stay on the same page
+- you are using the `dispatchLaravelToasty...()` methods for immediate feedback
 
 ### I updated the package but still see old markup or old runtime errors
 
@@ -1614,7 +1531,7 @@ The current version uses `data-laravel-toasty-config`, not `window.LaravelToasty
 
 ### My PHP helper call works in controllers but not in queue jobs
 
-That is expected. The untargeted helper is session-backed and is intended for the web request lifecycle.
+That is expected. The helper is session-backed and is intended for the web request lifecycle.
 
 ### My toast position or type is wrong
 

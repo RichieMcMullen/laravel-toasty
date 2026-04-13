@@ -15,10 +15,6 @@ class ToastyServiceProvider extends ServiceProvider
         $this->app->singleton(ToastManager::class, function ($app): ToastManager {
             return new ToastManager($app['session.store']);
         });
-
-        $this->app->singleton(ToastyFactory::class, function ($app): ToastyFactory {
-            return new ToastyFactory($app->make(ToastManager::class));
-        });
     }
 
     public function boot(): void
