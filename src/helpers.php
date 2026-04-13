@@ -1,10 +1,11 @@
 <?php
 
-use Atomcoder\Toasty\ToastManager;
+use Atomcoder\Toasty\PendingToasty;
+use Atomcoder\Toasty\ToastyFactory;
 
 if (! function_exists('laravel_toasty')) {
-    function laravel_toasty(): ToastManager
+    function laravel_toasty(mixed $target = null): PendingToasty
     {
-        return app(ToastManager::class);
+        return app(ToastyFactory::class)->for($target);
     }
 }

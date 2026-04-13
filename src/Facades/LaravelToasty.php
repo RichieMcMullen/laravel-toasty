@@ -8,6 +8,6 @@ class LaravelToasty extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Atomcoder\Toasty\ToastManager::class;
+        return \Atomcoder\Toasty\ToastyFactory::class;
     }
 }
