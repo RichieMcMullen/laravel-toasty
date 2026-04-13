@@ -182,6 +182,22 @@ If you want a click inside Blade or Alpine to show a toast immediately in the br
 </button>
 ```
 
+You can also pass a second argument with more control:
+
+```html
+<button
+    type="button"
+    onclick="toast('Project created', {
+        description: 'Your new project is ready to open.',
+        type: 'success',
+        duration: 5000,
+        position: 'top-right'
+    })"
+>
+    Show detailed toast
+</button>
+```
+
 ### Session-based PHP helper
 
 Use the global helper when you want to queue a toast from PHP for the current request cycle or the next rendered page.
@@ -245,6 +261,100 @@ The rendered toast stack also exposes a browser helper:
 </script>
 ```
 
+The `type` controls both the visual style and the built-in icon. Available types are:
+
+- `default`
+- `success`
+- `info`
+- `warning`
+- `danger`
+- `like`
+- `bell`
+
+Examples:
+
+```html
+<button
+    type="button"
+    onclick="toast('Invoice sent', {
+        description: 'The customer will receive it shortly.',
+        type: 'info'
+    })"
+>
+    Info toast
+</button>
+
+<button
+    type="button"
+    onclick="toast('Post liked', {
+        description: 'Your reaction was saved.',
+        type: 'like'
+    })"
+>
+    Like toast
+</button>
+
+<button
+    type="button"
+    onclick="toast('Reminder set', {
+        description: 'We will notify you tomorrow.',
+        type: 'bell'
+    })"
+>
+    Bell toast
+</button>
+```
+
+More advanced browser examples:
+
+```html
+<button
+    type="button"
+    onclick="toast('Backup complete', {
+        description: 'All files were uploaded successfully.',
+        type: 'success',
+        duration: 6000,
+        position: 'bottom-right'
+    })"
+>
+    Custom position and time
+</button>
+
+<button
+    type="button"
+    onclick="toast('Server warning', {
+        description: 'Disk usage is above 85%.',
+        type: 'warning',
+        duration: 0,
+        closeable: true
+    })"
+>
+    Persistent warning
+</button>
+
+<button
+    type="button"
+    onclick="toast('Expanded stack', {
+        description: 'This toast opens the stack in expanded mode.',
+        type: 'default',
+        layout: 'expanded'
+    })"
+>
+    Expanded layout
+</button>
+```
+
+If you prefer the namespaced helper, this is equivalent:
+
+```html
+<script>
+    window.Toasty.toast('Profile updated', {
+        description: 'Your changes have been saved.',
+        type: 'success',
+    });
+</script>
+```
+
 You can also change the stack layout at runtime:
 
 ```html
@@ -260,7 +370,7 @@ Each toast accepts these options:
 | Option | Type | Description |
 | --- | --- | --- |
 | `description` | `string|null` | Secondary text under the title |
-| `type` | `default`, `success`, `info`, `warning`, `danger`, `like`, `bell` | Toast style and icon |
+| `type` | `default`, `success`, `info`, `warning`, `danger`, `like`, `bell` | Toast style and built-in icon |
 | `position` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` | Stack position |
 | `duration` | `int` | Auto-dismiss time in milliseconds. Use `0` to keep it open |
 | `closeable` | `bool` | Whether to show the close button |
