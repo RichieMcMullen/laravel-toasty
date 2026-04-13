@@ -1,5 +1,13 @@
 # Laravel Toasty
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/atomcoder/laravel-toasty?style=flat-square)](https://packagist.org/packages/atomcoder/laravel-toasty)
+[![Total Downloads](https://img.shields.io/packagist/dt/atomcoder/laravel-toasty?style=flat-square)](https://packagist.org/packages/atomcoder/laravel-toasty)
+[![PHP Version](https://img.shields.io/packagist/php-v/atomcoder/laravel-toasty?style=flat-square)](https://packagist.org/packages/atomcoder/laravel-toasty)
+[![Laravel](https://img.shields.io/badge/Laravel-10%20to%2013-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![License](https://img.shields.io/github/license/RichieMcMullen/laravel-toasty?style=flat-square)](LICENSE.md)
+[![Latest Release](https://img.shields.io/github/v/release/RichieMcMullen/laravel-toasty?style=flat-square)](https://github.com/RichieMcMullen/laravel-toasty/releases)
+[![Stars](https://img.shields.io/github/stars/RichieMcMullen/laravel-toasty?style=flat-square)](https://github.com/RichieMcMullen/laravel-toasty/stargazers)
+
 ![Laravel Toasty](docs/images/header.png)
 
 Toast notifications for Laravel `10` through `13` with collision-safe Blade, PHP, Livewire, and JavaScript APIs.
