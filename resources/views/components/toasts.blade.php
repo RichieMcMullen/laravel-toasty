@@ -189,525 +189,519 @@
             transform: translateY(0);
         }
     </style>
-
-    <template id="laravel-toasty-runtime-source">
-        (() => {
-            if (window.LaravelToastyComponent) {
-                return;
-            }
-
-            window.LaravelToasty = window.LaravelToasty || {
-                defaults: {
-                    eventName: 'laravel-toasty:notify',
-                    layoutEventName: 'laravel-toasty:layout',
-                    position: 'top-center',
-                    duration: 4000,
-                    closeable: true,
-                    theme: {},
-                    legacyAliases: false,
-                },
-                notify(message, options = {}) {
-                    const defaults = window.LaravelToasty.defaults || {};
-                    const payload = {
-                        message: message ?? '',
-                        description: options.description ?? null,
-                        type: options.type ?? 'default',
-                        position: options.position ?? defaults.position ?? 'top-center',
-                        html: options.html ?? null,
-                        duration: options.duration ?? defaults.duration ?? null,
-                        closeable: options.closeable ?? defaults.closeable ?? null,
-                        layout: options.layout ?? null,
-                    };
-
-                    window.dispatchEvent(new CustomEvent(options.event ?? defaults.eventName ?? 'laravel-toasty:notify', {
-                        detail: payload,
-                    }));
-                },
-                toast(message, options = {}) {
-                    window.LaravelToasty.notify(message, options);
-                },
-                layout(layout = 'expanded', eventName = null) {
-                    const defaults = window.LaravelToasty.defaults || {};
-
-                    window.dispatchEvent(new CustomEvent(eventName ?? defaults.layoutEventName ?? 'laravel-toasty:layout', {
-                        detail: { layout },
-                    }));
-                },
-                setLayout(layout = 'expanded', eventName = null) {
-                    window.LaravelToasty.layout(layout, eventName);
-                },
-            };
-
-            window.laravelToasty = window.LaravelToasty;
-
-            window.LaravelToastyComponent = function (config = {}, initialToasts = []) {
-                const mountId = 'laravel-toasty-mount-' + Math.random().toString(16).slice(2);
-                const hasActiveMount = Boolean(window.LaravelToasty.activeMountId);
-
-                if (! hasActiveMount) {
-                    window.LaravelToasty.activeMountId = mountId;
-                }
-
-                return {
-                    mountId,
-                    disabled: hasActiveMount,
-                    toasts: [],
-                    timers: {},
-                    toastsHovered: false,
-                    expanded: config.layout === 'expanded',
-                    layout: config.layout ?? 'default',
-                    position: config.position ?? 'top-center',
-                    duration: config.duration ?? 4000,
-                    paddingBetweenToasts: config.paddingBetweenToasts ?? 15,
-                    eventName: config.eventName ?? 'laravel-toasty:notify',
-                    layoutEventName: config.layoutEventName ?? 'laravel-toasty:layout',
-                    closeable: config.closeable ?? true,
-                    zIndex: config.zIndex ?? 99,
-                    theme: config.theme ?? {},
-                    legacyAliases: Boolean(config.legacyAliases ?? false),
-                    initialToasts,
-                    boot() {
-                        if (this.disabled) {
-                            console.warn('[Laravel Toasty] Duplicate toast stack detected. Render the Laravel Toasty stack only once per page.');
-                            return;
-                        }
-
-                        window.LaravelToasty.defaults = {
-                            eventName: this.eventName,
-                            layoutEventName: this.layoutEventName,
-                            position: this.position,
-                            duration: this.duration,
-                            closeable: this.closeable,
-                            theme: this.theme,
-                            legacyAliases: this.legacyAliases,
-                        };
-
-                        window.laravelToasty = window.LaravelToasty;
-
-                        @if ($legacyAliases)
-                            if (this.legacyAliases) {
-                                window.Toasty = window.LaravelToasty;
-                                window.toast = window.toast || ((message, options = {}) => window.LaravelToasty.notify(message, options));
-                            }
-                        @endif
-
-                        this.initialToasts.forEach((toast) => this.enqueueToast(toast));
-
-                        this.$watch('toastsHovered', (value) => {
-                            if (this.layout !== 'default') {
-                                return;
-                            }
-
-                            if (this.position.includes('bottom')) {
-                                this.resetBottom();
-                            } else {
-                                this.resetTop();
-                            }
-
-                            this.expanded = value;
-                            this.stackToasts();
-
-                            if (! value) {
-                                setTimeout(() => this.stackToasts(), 10);
-                            }
-                        });
-                    },
-                    showFromEvent(detail = {}) {
-                        if (this.disabled) {
-                            return;
-                        }
-
-                        if (detail.layout) {
-                            this.setLayout(detail.layout);
-                        }
-
-                        if (detail.position) {
-                            this.position = detail.position;
-                        }
-
-                        this.enqueueToast(detail);
-                    },
-                    setLayout(layout = 'default') {
-                        this.layout = layout === 'expanded' ? 'expanded' : 'default';
-                        this.expanded = this.layout === 'expanded';
-                        this.stackToasts();
-                    },
-                    enqueueToast(detail = {}) {
-                        const toast = {
-                            id: 'laravel-toasty-toast-' + Math.random().toString(16).slice(2),
-                            message: detail.message ?? '',
-                            description: detail.description ?? null,
-                            type: ['default', 'success', 'info', 'warning', 'danger', 'like', 'bell'].includes(detail.type) ? detail.type : 'default',
-                            position: detail.position ?? this.position,
-                            html: detail.html ?? null,
-                            duration: Number.isFinite(Number(detail.duration)) ? Math.max(0, Number(detail.duration)) : this.duration,
-                            closeable: typeof detail.closeable === 'boolean' ? detail.closeable : this.closeable,
-                        };
-
-                        this.position = toast.position;
-                        this.toasts.unshift(toast);
-
-                        this.$nextTick(() => this.stackToasts());
-                    },
-                    initToast(toast) {
-                        const element = this.getToastElement(toast.id);
-
-                        if (! element) {
-                            return;
-                        }
-
-                        const inner = element.firstElementChild;
-
-                        if (! inner) {
-                            return;
-                        }
-
-                        if (this.position.includes('bottom')) {
-                            inner.classList.add('lty-motion-hidden-bottom');
-                        } else {
-                            inner.classList.add('lty-motion-hidden-top');
-                        }
-
-                        setTimeout(() => {
-                            inner.classList.remove('lty-motion-hidden-top', 'lty-motion-hidden-bottom');
-                            inner.classList.add('lty-motion-visible');
-                            this.stackToasts();
-                        }, 50);
-
-                        this.scheduleBurn(toast.id, toast.duration);
-                    },
-                    scheduleBurn(id, duration) {
-                        if (duration <= 0) {
-                            return;
-                        }
-
-                        this.clearTimer(id);
-
-                        this.timers[id] = window.setTimeout(() => {
-                            this.burnToast(id);
-                        }, duration);
-                    },
-                    clearTimer(id) {
-                        if (! this.timers[id]) {
-                            return;
-                        }
-
-                        window.clearTimeout(this.timers[id]);
-                        delete this.timers[id];
-                    },
-                    burnToast(id) {
-                        const toast = this.getToastWithId(id);
-                        const toastElement = this.getToastElement(id);
-
-                        if (! toast || ! toastElement) {
-                            this.deleteToastWithId(id);
-                            return;
-                        }
-
-                        this.clearTimer(id);
-
-                        const inner = toastElement.firstElementChild;
-
-                        if (! inner) {
-                            this.deleteToastWithId(id);
-                            return;
-                        }
-
-                        inner.classList.remove('lty-motion-visible');
-
-                        if (this.position.includes('bottom')) {
-                            inner.classList.add('lty-motion-hidden-bottom');
-                        } else {
-                            inner.classList.add('lty-motion-hidden-top');
-                        }
-
-                        setTimeout(() => {
-                            this.deleteToastWithId(id);
-                            this.stackToasts();
-                        }, 300);
-                    },
-                    deleteToastWithId(id) {
-                        this.clearTimer(id);
-
-                        const index = this.toasts.findIndex((toast) => toast.id === id);
-
-                        if (index !== -1) {
-                            this.toasts.splice(index, 1);
-                        }
-
-                        this.calculateHeightOfToastsContainer();
-                    },
-                    containerElement() {
-                        return this.$refs.container ?? null;
-                    },
-                    getToastWithId(id) {
-                        return this.toasts.find((toast) => toast.id === id);
-                    },
-                    getToastElement(id) {
-                        return document.getElementById(id);
-                    },
-                    stackToasts() {
-                        this.positionToasts();
-                        this.calculateHeightOfToastsContainer();
-
-                        setTimeout(() => this.calculateHeightOfToastsContainer(), 300);
-                    },
-                    positionToasts() {
-                        if (this.toasts.length === 0) {
-                            return;
-                        }
-
-                        const orderedToasts = this.toasts
-                            .map((toast) => this.getToastElement(toast.id))
-                            .filter(Boolean);
-
-                        orderedToasts.forEach((toastElement, index) => {
-                            const offset = this.expanded
-                                ? this.calculateExpandedOffset(orderedToasts, index)
-                                : index * 16;
-
-                            toastElement.style.zIndex = String(100 - index);
-                            toastElement.style.scale = this.expanded
-                                ? '100%'
-                                : `${Math.max(82, 100 - (index * 6))}%`;
-
-                            if (this.position.includes('bottom')) {
-                                toastElement.style.top = 'auto';
-                                toastElement.style.bottom = this.expanded ? `${offset}px` : '0px';
-                                toastElement.style.transform = this.expanded
-                                    ? 'translateY(0px)'
-                                    : `translateY(-${index * 16}px)`;
-                            } else {
-                                toastElement.style.bottom = 'auto';
-                                toastElement.style.top = this.expanded ? `${offset}px` : '0px';
-                                toastElement.style.transform = this.expanded
-                                    ? 'translateY(0px)'
-                                    : `translateY(${index * 16}px)`;
-
-                                if (! this.expanded && index > 0) {
-                                    this.alignBottom(orderedToasts[0], toastElement);
-                                }
-                            }
-                        });
-                    },
-                    calculateExpandedOffset(orderedToasts, index) {
-                        if (index === 0) {
-                            return 0;
-                        }
-
-                        let offset = 0;
-
-                        for (let i = 0; i < index; i += 1) {
-                            offset += orderedToasts[i].getBoundingClientRect().height + this.paddingBetweenToasts;
-                        }
-
-                        return offset;
-                    },
-                    alignBottom(element1, element2) {
-                        if (! element1 || ! element2) {
-                            return;
-                        }
-
-                        const top = element1.offsetTop + (element1.offsetHeight - element2.offsetHeight);
-                        element2.style.top = `${top}px`;
-                    },
-                    resetBottom() {
-                        this.toasts.forEach((toast) => {
-                            const element = this.getToastElement(toast.id);
-
-                            if (element) {
-                                element.style.bottom = '0px';
-                            }
-                        });
-                    },
-                    resetTop() {
-                        this.toasts.forEach((toast) => {
-                            const element = this.getToastElement(toast.id);
-
-                            if (element) {
-                                element.style.top = '0px';
-                            }
-                        });
-                    },
-                    calculateHeightOfToastsContainer() {
-                        const container = this.containerElement();
-
-                        if (! container) {
-                            return;
-                        }
-
-                        if (this.toasts.length === 0) {
-                            container.style.height = '0px';
-                            return;
-                        }
-
-                        const firstToast = this.getToastElement(this.toasts[0].id);
-                        const lastToast = this.getToastElement(this.toasts[this.toasts.length - 1].id);
-
-                        if (! firstToast || ! lastToast) {
-                            return;
-                        }
-
-                        const firstRect = firstToast.getBoundingClientRect();
-                        const lastRect = lastToast.getBoundingClientRect();
-
-                        if (this.toastsHovered || this.expanded) {
-                            if (this.position.includes('bottom')) {
-                                container.style.height = `${(firstRect.top + firstRect.height) - lastRect.top}px`;
-                            } else {
-                                container.style.height = `${(lastRect.top + lastRect.height) - firstRect.top}px`;
-                            }
-
-                            return;
-                        }
-
-                        container.style.height = `${firstRect.height}px`;
-                    },
-                    containerStyle() {
-                        const maxWidth = this.theme.max_width ?? '20rem';
-                        const safeTop = 'calc(1rem + env(safe-area-inset-top, 0px))';
-                        const safeBottom = 'calc(1rem + env(safe-area-inset-bottom, 0px))';
-                        const safeLeft = 'calc(1rem + env(safe-area-inset-left, 0px))';
-                        const safeRight = 'calc(1rem + env(safe-area-inset-right, 0px))';
-                        const style = {
-                            position: 'fixed',
-                            display: 'block',
-                            listStyle: 'none',
-                            margin: '0',
-                            padding: '0',
-                            width: `min(calc(100vw - 2rem), ${maxWidth})`,
-                            maxWidth,
-                            pointerEvents: 'none',
-                            zIndex: this.zIndex,
-                        };
-
-                        if (this.position === 'top-right') {
-                            style.top = safeTop;
-                            style.right = safeRight;
-                        } else if (this.position === 'top-left') {
-                            style.top = safeTop;
-                            style.left = safeLeft;
-                        } else if (this.position === 'bottom-right') {
-                            style.bottom = safeBottom;
-                            style.right = safeRight;
-                        } else if (this.position === 'bottom-left') {
-                            style.bottom = safeBottom;
-                            style.left = safeLeft;
-                        } else if (this.position === 'bottom-center') {
-                            style.bottom = safeBottom;
-                            style.left = '50%';
-                            style.transform = 'translateX(-50%)';
-                        } else {
-                            style.top = safeTop;
-                            style.left = '50%';
-                            style.transform = 'translateX(-50%)';
-                        }
-
-                        return {
-                            ...style,
-                        };
-                    },
-                    toastItemStyle() {
-                        return {
-                            position: 'absolute',
-                            width: '100%',
-                            userSelect: 'none',
-                            transition: 'all 300ms ease',
-                        };
-                    },
-                    styleProfile(toast) {
-                        const base = this.theme.base ?? {};
-                        const typeStyles = (this.theme.types ?? {})[toast.type] ?? {};
-
-                        return {
-                            ...base,
-                            ...typeStyles,
-                        };
-                    },
-                    toastCardStyle(toast) {
-                        const profile = this.styleProfile(toast);
-                        const blur = profile.backdrop_blur ?? '0px';
-
-                        return {
-                            background: profile.background ?? '#ffffff',
-                            border: `${profile.border_width ?? '1px'} solid ${profile.border_color ?? 'transparent'}`,
-                            borderRadius: profile.radius ?? '0.75rem',
-                            boxShadow: profile.shadow ?? '0 5px 15px -3px rgba(0, 0, 0, 0.08)',
-                            backdropFilter: `blur(${blur})`,
-                            WebkitBackdropFilter: `blur(${blur})`,
-                            fontFamily: profile.font_family ?? 'inherit',
-                        };
-                    },
-                    toastGlowStyle(toast) {
-                        const profile = this.styleProfile(toast);
-
-                        if (! profile.glow) {
-                            return { display: 'none' };
-                        }
-
-                        return {
-                            background: profile.glow,
-                            opacity: '1',
-                        };
-                    },
-                    iconBadgeStyle(toast) {
-                        const profile = this.styleProfile(toast);
-
-                        return {
-                            background: profile.icon_badge_background ?? 'rgba(243, 244, 246, 0.95)',
-                            color: profile.icon_color ?? profile.title_color ?? '#1f2937',
-                            boxShadow: profile.icon_badge_shadow ?? 'none',
-                        };
-                    },
-                    titleStyle(toast) {
-                        const profile = this.styleProfile(toast);
-
-                        return {
-                            color: profile.title_color ?? '#1f2937',
-                        };
-                    },
-                    descriptionStyle(toast) {
-                        const profile = this.styleProfile(toast);
-
-                        return {
-                            color: profile.description_color ?? 'rgba(31, 41, 55, 0.72)',
-                        };
-                    },
-                    closeButtonStyle(toast, hovered = false) {
-                        const profile = this.styleProfile(toast);
-
-                        return {
-                            color: hovered
-                                ? (profile.close_hover_color ?? profile.close_color ?? '#6b7280')
-                                : (profile.close_color ?? '#9ca3af'),
-                            background: hovered
-                                ? (profile.close_hover_background ?? 'transparent')
-                                : 'transparent',
-                        };
-                    },
-                };
-            };
-        })();
-    </template>
-
-    <script>
-        (() => {
-            if (window.LaravelToastyComponent) {
-                return;
-            }
-
-            const source = document.getElementById('laravel-toasty-runtime-source');
-
-            if (! source) {
-                return;
-            }
-
-            new Function(source.innerHTML)();
-        })();
-    </script>
 @endonce
 
-<div {{ $attributes->class('lty-root') }} x-data="(() => { if (! window.LaravelToastyComponent) { const source = document.getElementById('laravel-toasty-runtime-source'); if (source) { new Function(source.innerHTML)(); } } return window.LaravelToastyComponent(@js($componentConfig), @js($initialToasts)); })()" x-init="boot()">
+<div
+    {{ $attributes->class('lty-root') }}
+    data-laravel-toasty-config='@json($componentConfig)'
+    data-laravel-toasty-initial='@json($initialToasts)'
+    x-data="{
+        mountId: null,
+        disabled: false,
+        toasts: [],
+        timers: {},
+        toastsHovered: false,
+        expanded: false,
+        layout: 'default',
+        position: 'top-center',
+        duration: 4000,
+        paddingBetweenToasts: 15,
+        eventName: 'laravel-toasty:notify',
+        layoutEventName: 'laravel-toasty:layout',
+        closeable: true,
+        zIndex: 99,
+        theme: {},
+        legacyAliases: false,
+        initialToasts: [],
+        boot() {
+            const config = JSON.parse(this.$el.dataset.laravelToastyConfig ?? '{}');
+            const initialToasts = JSON.parse(this.$el.dataset.laravelToastyInitial ?? '[]');
+            const hasActiveMount = Boolean(window.LaravelToasty?.activeMountId);
+
+            this.mountId = 'laravel-toasty-mount-' + Math.random().toString(16).slice(2);
+            this.disabled = hasActiveMount;
+            this.expanded = config.layout === 'expanded';
+            this.layout = config.layout ?? 'default';
+            this.position = config.position ?? 'top-center';
+            this.duration = config.duration ?? 4000;
+            this.paddingBetweenToasts = config.paddingBetweenToasts ?? 15;
+            this.eventName = config.eventName ?? 'laravel-toasty:notify';
+            this.layoutEventName = config.layoutEventName ?? 'laravel-toasty:layout';
+            this.closeable = config.closeable ?? true;
+            this.zIndex = config.zIndex ?? 99;
+            this.theme = config.theme ?? {};
+            this.legacyAliases = Boolean(config.legacyAliases ?? false);
+            this.initialToasts = Array.isArray(initialToasts) ? initialToasts : [];
+
+            if (! window.LaravelToasty) {
+                window.LaravelToasty = {};
+            }
+
+            if (! hasActiveMount) {
+                window.LaravelToasty.activeMountId = this.mountId;
+            }
+
+            this.registerGlobals();
+
+            if (this.disabled) {
+                console.warn('[Laravel Toasty] Duplicate toast stack detected. Render the Laravel Toasty stack only once per page.');
+                return;
+            }
+
+            this.initialToasts.forEach((toast) => this.enqueueToast(toast));
+
+            this.$watch('toastsHovered', (value) => {
+                if (this.layout !== 'default') {
+                    return;
+                }
+
+                if (this.position.includes('bottom')) {
+                    this.resetBottom();
+                } else {
+                    this.resetTop();
+                }
+
+                this.expanded = value;
+                this.stackToasts();
+
+                if (! value) {
+                    setTimeout(() => this.stackToasts(), 10);
+                }
+            });
+        },
+        registerGlobals() {
+            const api = window.LaravelToasty || {};
+
+            api.defaults = {
+                eventName: this.eventName,
+                layoutEventName: this.layoutEventName,
+                position: this.position,
+                duration: this.duration,
+                closeable: this.closeable,
+                theme: this.theme,
+                legacyAliases: this.legacyAliases,
+            };
+
+            api.notify = (message, options = {}) => {
+                const defaults = window.LaravelToasty.defaults || {};
+                const payload = {
+                    message: message ?? '',
+                    description: options.description ?? null,
+                    type: options.type ?? 'default',
+                    position: options.position ?? defaults.position ?? 'top-center',
+                    html: options.html ?? null,
+                    duration: options.duration ?? defaults.duration ?? null,
+                    closeable: options.closeable ?? defaults.closeable ?? null,
+                    layout: options.layout ?? null,
+                };
+
+                window.dispatchEvent(new CustomEvent(options.event ?? defaults.eventName ?? 'laravel-toasty:notify', {
+                    detail: payload,
+                }));
+            };
+
+            api.toast = (message, options = {}) => {
+                window.LaravelToasty.notify(message, options);
+            };
+
+            api.layout = (layout = 'expanded', eventName = null) => {
+                const defaults = window.LaravelToasty.defaults || {};
+
+                window.dispatchEvent(new CustomEvent(eventName ?? defaults.layoutEventName ?? 'laravel-toasty:layout', {
+                    detail: { layout },
+                }));
+            };
+
+            api.setLayout = (layout = 'expanded', eventName = null) => {
+                window.LaravelToasty.layout(layout, eventName);
+            };
+
+            window.LaravelToasty = api;
+            window.laravelToasty = api;
+
+            @if ($legacyAliases)
+                if (this.legacyAliases) {
+                    window.Toasty = api;
+                    window.toast = window.toast || ((message, options = {}) => window.LaravelToasty.notify(message, options));
+                }
+            @endif
+        },
+        showFromEvent(detail = {}) {
+            if (this.disabled) {
+                return;
+            }
+
+            if (detail.layout) {
+                this.setLayout(detail.layout);
+            }
+
+            if (detail.position) {
+                this.position = detail.position;
+            }
+
+            this.enqueueToast(detail);
+        },
+        setLayout(layout = 'default') {
+            this.layout = layout === 'expanded' ? 'expanded' : 'default';
+            this.expanded = this.layout === 'expanded';
+            this.stackToasts();
+        },
+        enqueueToast(detail = {}) {
+            const toast = {
+                id: 'laravel-toasty-toast-' + Math.random().toString(16).slice(2),
+                message: detail.message ?? '',
+                description: detail.description ?? null,
+                type: ['default', 'success', 'info', 'warning', 'danger', 'like', 'bell'].includes(detail.type) ? detail.type : 'default',
+                position: detail.position ?? this.position,
+                html: detail.html ?? null,
+                duration: Number.isFinite(Number(detail.duration)) ? Math.max(0, Number(detail.duration)) : this.duration,
+                closeable: typeof detail.closeable === 'boolean' ? detail.closeable : this.closeable,
+            };
+
+            this.position = toast.position;
+            this.toasts.unshift(toast);
+
+            this.$nextTick(() => this.stackToasts());
+        },
+        initToast(toast) {
+            const element = this.getToastElement(toast.id);
+
+            if (! element) {
+                return;
+            }
+
+            const inner = element.firstElementChild;
+
+            if (! inner) {
+                return;
+            }
+
+            if (this.position.includes('bottom')) {
+                inner.classList.add('lty-motion-hidden-bottom');
+            } else {
+                inner.classList.add('lty-motion-hidden-top');
+            }
+
+            setTimeout(() => {
+                inner.classList.remove('lty-motion-hidden-top', 'lty-motion-hidden-bottom');
+                inner.classList.add('lty-motion-visible');
+                this.stackToasts();
+            }, 50);
+
+            this.scheduleBurn(toast.id, toast.duration);
+        },
+        scheduleBurn(id, duration) {
+            if (duration <= 0) {
+                return;
+            }
+
+            this.clearTimer(id);
+
+            this.timers[id] = window.setTimeout(() => {
+                this.burnToast(id);
+            }, duration);
+        },
+        clearTimer(id) {
+            if (! this.timers[id]) {
+                return;
+            }
+
+            window.clearTimeout(this.timers[id]);
+            delete this.timers[id];
+        },
+        burnToast(id) {
+            const toast = this.getToastWithId(id);
+            const toastElement = this.getToastElement(id);
+
+            if (! toast || ! toastElement) {
+                this.deleteToastWithId(id);
+                return;
+            }
+
+            this.clearTimer(id);
+
+            const inner = toastElement.firstElementChild;
+
+            if (! inner) {
+                this.deleteToastWithId(id);
+                return;
+            }
+
+            inner.classList.remove('lty-motion-visible');
+
+            if (this.position.includes('bottom')) {
+                inner.classList.add('lty-motion-hidden-bottom');
+            } else {
+                inner.classList.add('lty-motion-hidden-top');
+            }
+
+            setTimeout(() => {
+                this.deleteToastWithId(id);
+                this.stackToasts();
+            }, 300);
+        },
+        deleteToastWithId(id) {
+            this.clearTimer(id);
+
+            const index = this.toasts.findIndex((toast) => toast.id === id);
+
+            if (index !== -1) {
+                this.toasts.splice(index, 1);
+            }
+
+            this.calculateHeightOfToastsContainer();
+        },
+        containerElement() {
+            return this.$refs.container ?? null;
+        },
+        getToastWithId(id) {
+            return this.toasts.find((toast) => toast.id === id);
+        },
+        getToastElement(id) {
+            return document.getElementById(id);
+        },
+        stackToasts() {
+            this.positionToasts();
+            this.calculateHeightOfToastsContainer();
+
+            setTimeout(() => this.calculateHeightOfToastsContainer(), 300);
+        },
+        positionToasts() {
+            if (this.toasts.length === 0) {
+                return;
+            }
+
+            const orderedToasts = this.toasts
+                .map((toast) => this.getToastElement(toast.id))
+                .filter(Boolean);
+
+            orderedToasts.forEach((toastElement, index) => {
+                const offset = this.expanded
+                    ? this.calculateExpandedOffset(orderedToasts, index)
+                    : index * 16;
+
+                toastElement.style.zIndex = String(100 - index);
+                toastElement.style.scale = this.expanded
+                    ? '100%'
+                    : `${Math.max(82, 100 - (index * 6))}%`;
+
+                if (this.position.includes('bottom')) {
+                    toastElement.style.top = 'auto';
+                    toastElement.style.bottom = this.expanded ? `${offset}px` : '0px';
+                    toastElement.style.transform = this.expanded
+                        ? 'translateY(0px)'
+                        : `translateY(-${index * 16}px)`;
+                } else {
+                    toastElement.style.bottom = 'auto';
+                    toastElement.style.top = this.expanded ? `${offset}px` : '0px';
+                    toastElement.style.transform = this.expanded
+                        ? 'translateY(0px)'
+                        : `translateY(${index * 16}px)`;
+
+                    if (! this.expanded && index > 0) {
+                        this.alignBottom(orderedToasts[0], toastElement);
+                    }
+                }
+            });
+        },
+        calculateExpandedOffset(orderedToasts, index) {
+            if (index === 0) {
+                return 0;
+            }
+
+            let offset = 0;
+
+            for (let i = 0; i < index; i += 1) {
+                offset += orderedToasts[i].getBoundingClientRect().height + this.paddingBetweenToasts;
+            }
+
+            return offset;
+        },
+        alignBottom(element1, element2) {
+            if (! element1 || ! element2) {
+                return;
+            }
+
+            const top = element1.offsetTop + (element1.offsetHeight - element2.offsetHeight);
+            element2.style.top = `${top}px`;
+        },
+        resetBottom() {
+            this.toasts.forEach((toast) => {
+                const element = this.getToastElement(toast.id);
+
+                if (element) {
+                    element.style.bottom = '0px';
+                }
+            });
+        },
+        resetTop() {
+            this.toasts.forEach((toast) => {
+                const element = this.getToastElement(toast.id);
+
+                if (element) {
+                    element.style.top = '0px';
+                }
+            });
+        },
+        calculateHeightOfToastsContainer() {
+            const container = this.containerElement();
+
+            if (! container) {
+                return;
+            }
+
+            if (this.toasts.length === 0) {
+                container.style.height = '0px';
+                return;
+            }
+
+            const firstToast = this.getToastElement(this.toasts[0].id);
+            const lastToast = this.getToastElement(this.toasts[this.toasts.length - 1].id);
+
+            if (! firstToast || ! lastToast) {
+                return;
+            }
+
+            const firstRect = firstToast.getBoundingClientRect();
+            const lastRect = lastToast.getBoundingClientRect();
+
+            if (this.toastsHovered || this.expanded) {
+                if (this.position.includes('bottom')) {
+                    container.style.height = `${(firstRect.top + firstRect.height) - lastRect.top}px`;
+                } else {
+                    container.style.height = `${(lastRect.top + lastRect.height) - firstRect.top}px`;
+                }
+
+                return;
+            }
+
+            container.style.height = `${firstRect.height}px`;
+        },
+        containerStyle() {
+            const maxWidth = this.theme.max_width ?? '20rem';
+            const safeTop = 'calc(1rem + env(safe-area-inset-top, 0px))';
+            const safeBottom = 'calc(1rem + env(safe-area-inset-bottom, 0px))';
+            const safeLeft = 'calc(1rem + env(safe-area-inset-left, 0px))';
+            const safeRight = 'calc(1rem + env(safe-area-inset-right, 0px))';
+            const style = {
+                position: 'fixed',
+                display: 'block',
+                listStyle: 'none',
+                margin: '0',
+                padding: '0',
+                width: `min(calc(100vw - 2rem), ${maxWidth})`,
+                maxWidth,
+                pointerEvents: 'none',
+                zIndex: this.zIndex,
+            };
+
+            if (this.position === 'top-right') {
+                style.top = safeTop;
+                style.right = safeRight;
+            } else if (this.position === 'top-left') {
+                style.top = safeTop;
+                style.left = safeLeft;
+            } else if (this.position === 'bottom-right') {
+                style.bottom = safeBottom;
+                style.right = safeRight;
+            } else if (this.position === 'bottom-left') {
+                style.bottom = safeBottom;
+                style.left = safeLeft;
+            } else if (this.position === 'bottom-center') {
+                style.bottom = safeBottom;
+                style.left = '50%';
+                style.transform = 'translateX(-50%)';
+            } else {
+                style.top = safeTop;
+                style.left = '50%';
+                style.transform = 'translateX(-50%)';
+            }
+
+            return {
+                ...style,
+            };
+        },
+        toastItemStyle() {
+            return {
+                position: 'absolute',
+                width: '100%',
+                userSelect: 'none',
+                transition: 'all 300ms ease',
+            };
+        },
+        styleProfile(toast) {
+            const base = this.theme.base ?? {};
+            const typeStyles = (this.theme.types ?? {})[toast.type] ?? {};
+
+            return {
+                ...base,
+                ...typeStyles,
+            };
+        },
+        toastCardStyle(toast) {
+            const profile = this.styleProfile(toast);
+            const blur = profile.backdrop_blur ?? '0px';
+
+            return {
+                background: profile.background ?? '#ffffff',
+                border: `${profile.border_width ?? '1px'} solid ${profile.border_color ?? 'transparent'}`,
+                borderRadius: profile.radius ?? '0.75rem',
+                boxShadow: profile.shadow ?? '0 5px 15px -3px rgba(0, 0, 0, 0.08)',
+                backdropFilter: `blur(${blur})`,
+                WebkitBackdropFilter: `blur(${blur})`,
+                fontFamily: profile.font_family ?? 'inherit',
+            };
+        },
+        toastGlowStyle(toast) {
+            const profile = this.styleProfile(toast);
+
+            if (! profile.glow) {
+                return { display: 'none' };
+            }
+
+            return {
+                background: profile.glow,
+                opacity: '1',
+            };
+        },
+        iconBadgeStyle(toast) {
+            const profile = this.styleProfile(toast);
+
+            return {
+                background: profile.icon_badge_background ?? 'rgba(243, 244, 246, 0.95)',
+                color: profile.icon_color ?? profile.title_color ?? '#1f2937',
+                boxShadow: profile.icon_badge_shadow ?? 'none',
+            };
+        },
+        titleStyle(toast) {
+            const profile = this.styleProfile(toast);
+
+            return {
+                color: profile.title_color ?? '#1f2937',
+            };
+        },
+        descriptionStyle(toast) {
+            const profile = this.styleProfile(toast);
+
+            return {
+                color: profile.description_color ?? 'rgba(31, 41, 55, 0.72)',
+            };
+        },
+        closeButtonStyle(toast, hovered = false) {
+            const profile = this.styleProfile(toast);
+
+            return {
+                color: hovered
+                    ? (profile.close_hover_color ?? profile.close_color ?? '#6b7280')
+                    : (profile.close_color ?? '#9ca3af'),
+                background: hovered
+                    ? (profile.close_hover_background ?? 'transparent')
+                    : 'transparent',
+            };
+        },
+    }"
+    x-init="boot()"
+>
     <template x-teleport="body">
         <ul
             x-ref="container"

@@ -10,10 +10,11 @@ class BladeComponentTest extends TestCase
     {
         $html = $this->blade('@laravelToasty');
 
-        $html->assertSee('window.LaravelToastyComponent', false);
+        $html->assertSee('data-laravel-toasty-config=', false);
         $html->assertSeeInOrder([
-            'id="laravel-toasty-runtime-source"',
-            'x-data="(() => { if (! window.LaravelToastyComponent)',
+            'data-laravel-toasty-config=',
+            'x-data="{',
+            'boot() {',
         ], false);
         $html->assertSee('x-teleport="body"', false);
         $html->assertSee('laravel-toasty:notify', false);
@@ -49,7 +50,7 @@ class BladeComponentTest extends TestCase
 
         $html = $this->blade('<x-laravel-toasty::toasts />');
 
-        $html->assertSee('window.Toasty = window.LaravelToasty', false);
+        $html->assertSee('window.Toasty = api', false);
         $html->assertSee('window.toast = window.toast ||', false);
     }
 }
